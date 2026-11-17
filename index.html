@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>旋風忍者：無盡道場跑酷 | Ninjago Runner</title>
+    <!-- 引入 Google Fonts 繁體中文與復古像素字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自訂遊戲字體與全域樣式 */
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 100%);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        .font-arcade {
+            font-family: 'Press Start 2P', 'Noto Sans TC', monospace;
+        }
+
+        /* 忍者木質與金屬邊框質感 */
+        .dojo-frame {
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 2px #475569, 0 0 0 6px #1e293b, 0 0 25px rgba(234, 179, 8, 0.15);
+        }
+
+        /* 畫布響應式容器 */
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+
+        /* 旋風術能量滿格閃爍動畫 */
+        @keyframes pulseGold {
+            0%, 100% { box-shadow: 0 0 10px rgba(250, 204, 21, 0.6), inset 0 0 8px rgba(250, 204, 21, 0.4); }
+            50% { box-shadow: 0 0 24px rgba(250, 204, 21, 1), inset 0 0 14px rgba(250, 204, 21, 0.8); }
+        }
+        .spinjitzu-ready {
+            animation: pulseGold 1.2s infinite ease-in-out;
+        }
+
+        /* 按鈕立體點擊效果 */
+        .ninja-btn {
+            transition: transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease;
+        }
+        .ninja-btn:active {
+            transform: translateY(2px) scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 text-slate-100">
+
+    <!-- 頂部標題與資訊區 -->
+    <header class="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-3">
+            <!-- 忍者徽章 SVG -->
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-red-700 p-0.5 shadow-lg flex items-center justify-center">
+                <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+                    <svg class="w-7 h-7 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L14.8 8.8L22 9.2L16.5 14L18.2 21L12 17.3L5.8 21L7.5 14L2 9.2L9.2 8.8L12 2Z"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black tracking-wider bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                    旋風忍者：無盡道場
+                </h1>
+                <p class="text-xs text-slate-400 tracking-wide">SPINJITZU ENDLESS RUNNER • 404 忍者版</p>
+            </div>
+        </div>
+
+        <!-- 角色選擇器 (Character Selector Pills) -->
+        <div class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-700/80 shadow-inner" id="characterSelector">
+            <button data-ninja="kai" class="ninja-pill active px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all bg-red-600 text-white shadow-md shadow-red-600/30">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-300 inline-block"></span>赤地 凱
+            </button>
+            <button data-ninja="jay" class="ninja-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all text-slate-300 hover:bg-slate-800">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span>阿光 傑
+            </button>
+            <button data-ninja="cole" class="ninja-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all text-slate-300 hover:bg-slate-800">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>阿剛
+            </button>
+            <button data-ninja="zane" class="ninja-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all text-slate-300 hover:bg-slate-800">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan-200 inline-block"></span>冰忍
+            </button>
+            <button data-ninja="lloyd" class="ninja-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all text-slate-300 hover:bg-slate-800">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>勞埃德
+            </button>
+        </div>
+    </header>
+
+    <!-- 主遊戲視窗容器 -->
+    <main class="w-full max-w-4xl">
+        <div class="relative w-full h-[300px] sm:h-[360px] md:h-[400px] rounded-2xl overflow-hidden dojo-frame bg-slate-900 border border-slate-700" id="canvasContainer">
+            
+            <!-- 遊戲主畫布 -->
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- 頂部 HUD 狀態列 (分數、旋風術能量條、音效開關) -->
+            <div class="absolute top-3 left-3 right-3 sm:top-4 sm:left-5 sm:right-5 flex items-center justify-between pointer-events-none z-10">
+                <!-- 左側：旋風術能量條 -->
+                <div class="flex items-center gap-2 bg-slate-950/75 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-700/80 pointer-events-auto">
+                    <span class="text-xs font-bold text-amber-400 whitespace-nowrap flex items-center gap-1">
+                        🌪️ 旋風能量
+                    </span>
+                    <div class="w-24 sm:w-36 h-3 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700" id="energyBarWrapper">
+                        <div id="energyBarFill" class="h-full w-0 bg-gradient-to-r from-amber-500 via-yellow-400 to-white rounded-full transition-all duration-150"></div>
+                    </div>
+                    <span id="energyText" class="text-[11px] font-bold text-slate-300 w-9 text-right">0%</span>
+                </div>
+
+                <!-- 右側：分數板與靜音按鈕 -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="bg-slate-950/75 backdrop-blur-sm px-3.5 py-1.5 rounded-xl border border-slate-700/80 flex items-center gap-3 font-arcade text-[11px] sm:text-xs tracking-wider">
+                        <span class="text-slate-400">HI <span id="highScoreDisplay" class="text-amber-400">00000</span></span>
+                        <span class="text-white" id="currentScoreDisplay">00000</span>
+                    </div>
+
+                    <button id="muteBtn" title="切換音效" class="pointer-events-auto w-9 h-9 rounded-xl bg-slate-950/75 hover:bg-slate-800 backdrop-blur-sm border border-slate-700/80 flex items-center justify-center text-slate-200 transition-colors">
+                        <!-- 喇叭圖示 (預設開啟) -->
+                        <svg id="soundOnIcon" class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                        </svg>
+                        <svg id="soundOffIcon" class="w-5 h-5 text-slate-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 遊戲開始提示覆蓋層 (Start Screen Overlay) -->
+            <div id="startOverlay" class="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-20 transition-opacity duration-200">
+                <div class="bg-slate-900/95 border-2 border-amber-500/70 rounded-2xl p-5 sm:p-7 max-w-md shadow-2xl">
+                    <div class="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold mb-2 border border-amber-500/30">
+                        無盡試煉開始
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white mb-2 tracking-wide">
+                        準備好施展旋風術了嗎？
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">
+                        閃避木人樁、竹刺與暗影飛鏢，收集<span class="text-amber-400 font-bold">黃金手裡劍</span>集滿能量，化身元素龍捲風橫掃全場！
+                    </p>
+                    <button id="startBtn" class="ninja-btn w-full py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-base sm:text-lg shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2">
+                        <span>開始修煉</span>
+                        <span class="text-xs bg-slate-950/20 px-2 py-0.5 rounded font-bold">SPACE / 點擊</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 遊戲結束覆蓋層 (Game Over Overlay) -->
+            <div id="gameOverOverlay" class="hidden absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center z-20">
+                <div class="bg-slate-900/95 border-2 border-red-500/80 rounded-2xl p-5 sm:p-7 max-w-sm w-full shadow-2xl transform transition-all">
+                    <div class="text-3xl mb-1">💥</div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-red-400 tracking-wider mb-1">
+                        修煉中斷！
+                    </h2>
+                    <p id="deathReasonText" class="text-xs text-slate-400 mb-4">不小心撞上了道場機關</p>
+                    
+                    <div class="grid grid-cols-2 gap-3 bg-slate-950/80 p-3 rounded-xl border border-slate-800 mb-5">
+                        <div>
+                            <div class="text-[11px] text-slate-400">本次得分</div>
+                            <div id="finalScoreText" class="text-xl font-black text-white font-arcade mt-0.5">00000</div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] text-slate-400">最高紀錄</div>
+                            <div id="finalHighScoreText" class="text-xl font-black text-amber-400 font-arcade mt-0.5">00000</div>
+                        </div>
+                    </div>
+
+                    <button id="restartBtn" class="ninja-btn w-full py-3 px-6 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-base sm:text-lg shadow-lg shadow-red-600/30 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>再玩一次</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部操作控制列 (支援手機與滑鼠點擊操作，以及操作說明) -->
+        <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:px-5">
+            <!-- 文字操作說明 -->
+            <div class="text-xs sm:text-sm text-slate-300 text-center sm:text-left">
+                <span class="text-amber-400 font-bold">操作秘笈：</span>
+                按 <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-amber-300 font-mono text-xs">空白鍵 / ↑</kbd> 跳躍・
+                <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-amber-300 font-mono text-xs">↓ / S</kbd> 下蹲滑行・
+                集滿能量按 <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-amber-300 font-mono text-xs">Shift / E</kbd> 施展旋風術！
+            </div>
+
+            <!-- 觸控 / 快捷動作按鈕群 (方便行動裝置遊玩) -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+                <button id="btnDuckMobile" class="ninja-btn flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5">
+                    <span>⬇️ 滑行</span>
+                </button>
+                <button id="btnSpinjitzuMobile" disabled class="ninja-btn flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-xs font-black text-slate-500 flex items-center justify-center gap-1.5 transition-all">
+                    <span>🌪️ 旋風術</span>
+                </button>
+                <button id="btnJumpMobile" class="ninja-btn flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-xs font-bold text-amber-300 flex items-center justify-center gap-1.5">
+                    <span>⬆️ 跳躍</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /**
+         * ============================================================================
+         * 旋風忍者：無盡道場跑酷 (Ninjago Endless Runner)
+         * 核心遊戲引擎、Web Audio 復古合成音效、角色動畫與視差道場背景繪製
+         * ============================================================================
+         */
+
+        // 1. 忍者角色配色與屬性定義
+        const NINJAS = {
+            kai: {
+                name: '赤地 凱',
+                element: '火元素',
+                giMain: '#dc2626',      // 忍者服主色 (烈焰紅)
+                giDark: '#991b1b',      // 陰影紅
+                giAccent: '#fbbf24',    // 金色飾邊
+                eyeGlow: '#fef08a',     // 眼神光
+                tornadoInner: '#fef08a',
+                tornadoMid: '#f97316',
+                tornadoOuter: '#dc2626',
+                pillActiveClass: 'bg-red-600 text-white shadow-md shadow-red-600/30'
+            },
+            jay: {
+                name: '阿光 傑',
+                element: '雷電元素',
+                giMain: '#0284c7',      // 閃電藍
+                giDark: '#075985',
+                giAccent: '#38bdf8',
+                eyeGlow: '#e0f2fe',
+                tornadoInner: '#ffffff',
+                tornadoMid: '#38bdf8',
+                tornadoOuter: '#1d4ed8',
+                pillActiveClass: 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
+            },
+            cole: {
+                name: '阿剛',
+                element: '大地元素',
+                giMain: '#27272a',      // 岩石黑
+                giDark: '#18181b',
+                giAccent: '#f97316',    // 岩漿橘
+                eyeGlow: '#fed7aa',
+                tornadoInner: '#fdba74',
+                tornadoMid: '#ea580c',
+                tornadoOuter: '#3f3f46',
+                pillActiveClass: 'bg-zinc-700 text-amber-400 border border-amber-500/50 shadow-md'
+            },
+            zane: {
+                name: '冰忍',
+                element: '寒冰元素',
+                giMain: '#f8fafc',      // 霜雪白
+                giDark: '#cbd5e1',
+                giAccent: '#38bdf8',    // 冰晶藍
+                eyeGlow: '#7dd3fc',
+                tornadoInner: '#ffffff',
+                tornadoMid: '#bae6fd',
+                tornadoOuter: '#0ea5e9',
+                pillActiveClass: 'bg-slate-200 text-slate-900 shadow-md shadow-cyan-400/30'
+            },
+            lloyd: {
+                name: '勞埃德',
+                element: '生命能量',
+                giMain: '#16a34a',      // 翡翠綠
+                giDark: '#14532d',
+                giAccent: '#facc15',    // 黃金綠
+                eyeGlow: '#bbf7d0',
+                tornadoInner: '#fef08a',
+                tornadoMid: '#4ade80',
+                tornadoOuter: '#15803d',
+                pillActiveClass: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+            }
+        };
+
+        // 2. Web Audio API 復古街機音效系統 (無須外部音檔)
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+
+            // 跳躍音效 (清脆上升波)
+            playJump() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(580, now + 0.14);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            // 收集黃金手裡劍/卷軸音效 (雙音階叮咚)
+            playCollect() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.setValueAtTime(1318.5, now + 0.06);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.23);
+            }
+
+            // 施展旋風術 (Spinjitzu) 能量爆發音
+            playSpinjitzu() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.exponentialRampToValueAtTime(720, now + 0.25);
+                osc.frequency.exponentialRampToValueAtTime(340, now + 0.55);
+                gain.gain.setValueAtTime(0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.58);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+
+            // 旋風術撞碎障礙物音效
+            playSmash() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.19);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+
+            // 每 100 分里程碑提示音
+            playMilestone() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.11, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.06 + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.16);
+                });
+            }
+
+            // 撞擊遊戲結束鑼聲
+            playGameOver() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(190, now);
+                osc.frequency.exponentialRampToValueAtTime(55, now + 0.45);
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.48);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        // 3. 遊戲主控制器與狀態機
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const sfx = new SoundFX();
+
+        // UI 元素參照
+        const startOverlay = document.getElementById('startOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const soundOnIcon = document.getElementById('soundOnIcon');
+        const soundOffIcon = document.getElementById('soundOffIcon');
+        const currentScoreDisplay = document.getElementById('currentScoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const finalScoreText = document.getElementById('finalScoreText');
+        const finalHighScoreText = document.getElementById('finalHighScoreText');
+        const deathReasonText = document.getElementById('deathReasonText');
+        const energyBarWrapper = document.getElementById('energyBarWrapper');
+        const energyBarFill = document.getElementById('energyBarFill');
+        const energyText = document.getElementById('energyText');
+        const btnSpinjitzuMobile = document.getElementById('btnSpinjitzuMobile');
+        const btnJumpMobile = document.getElementById('btnJumpMobile');
+        const btnDuckMobile = document.getElementById('btnDuckMobile');
+
+        // 遊戲核心變數
+        let currentNinjaKey = 'kai';
+        let gameState = 'IDLE'; // 'IDLE' | 'PLAYING' | 'GAMEOVER'
+        let animationFrameId = null;
+        let lastTime = 0;
+
+        // 畫布邏輯尺寸 (動態響應容器大小)
+        let width = 800;
+        let height = 360;
+        let groundY = 300;
+
+        // 分數與速度參數
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('ninjago_runner_hi') || '0', 10);
+        let lastMilestone = 0;
+        let scoreFlashTimer = 0;
+        let baseSpeed = 420; // 像素/秒
+        let gameSpeed = baseSpeed;
+        let distanceTraveled = 0;
+
+        // 日夜交替系統 (每 500 分切換一次情境：黃昏道場 -> 星夜月影 -> 黃金黎明)
+        let timeOfDay = 0; // 0: 黃昏暮色, 1: 深夜月光, 2: 黃金黎明
+        let screenShake = 0;
+
+        // 玩家忍者物理與狀態
+        const player = {
+            x: 75,
+            y: 0,
+            width: 42,
+            height: 54,
+            normalHeight: 54,
+            duckHeight: 30,
+            vy: 0,
+            gravity: 2250,
+            jumpForce: -760,
+            isGrounded: true,
+            isDucking: false,
+            jumpHoldTimer: 0,
+            maxJumpHold: 0.16,
+            runCycle: 0,
+            spinjitzuEnergy: 0,       // 0 ~ 100
+            isSpinjitzu: false,       // 是否正在施展旋風術
+            spinjitzuTimer: 0,
+            spinjitzuDuration: 4.5,   // 旋風術持續秒數
+            spinAngle: 0
+        };
+
+        // 物件池：障礙物、黃金手裡劍、粒子特效、視差背景元素
+        let obstacles = [];
+        let collectibles = [];
+        let particles = [];
+        let bgMountains = [];
+        let bgPagodas = [];
+        let bgLanterns = [];
+        let spawnTimer = 0;
+        let collectibleTimer = 1.2;
+
+        // 輸入狀態追蹤
+        const keys = {
+            jump: false,
+            duck: false
+        };
+
+        // 初始化畫布大小與背景裝飾
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            width = rect.width;
+            height = rect.height;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            groundY = height - 48;
+            if (player.isGrounded) {
+                player.y = groundY - player.height;
+            }
+            initParallaxElements();
+        }
+
+        function initParallaxElements() {
+            bgMountains = [];
+            for (let i = 0; i < 6; i++) {
+                bgMountains.push({
+                    x: i * (width / 4),
+                    w: 180 + Math.random() * 140,
+                    h: 90 + Math.random() * 70
+                });
+            }
+            bgPagodas = [];
+            for (let i = 0; i < 4; i++) {
+                bgPagodas.push({
+                    x: i * (width / 2.2) + 80,
+                    floors: 2 + (i % 2),
+                    scale: 0.75 + (i % 2) * 0.25
+                });
+            }
+            bgLanterns = [];
+            for (let i = 0; i < 7; i++) {
+                bgLanterns.push({
+                    x: Math.random() * width,
+                    y: 45 + Math.random() * (groundY - 140),
+                    speed: 25 + Math.random() * 35,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        // 格式化 5 位數分數顯示
+        function formatScore(num) {
+            return Math.floor(num).toString().padStart(5, '0');
+        }
+
+        function updateScoreUI() {
+            highScoreDisplay.textContent = formatScore(highScore);
+            currentScoreDisplay.textContent = formatScore(score);
+        }
+
+        // 更新旋風術能量條 UI
+        function updateEnergyUI() {
+            const pct = Math.min(100, Math.floor(player.spinjitzuEnergy));
+            energyBarFill.style.width = `${pct}%`;
+            energyText.textContent = player.isSpinjitzu ? '旋風中!' : `${pct}%`;
+
+            if (pct >= 100 && !player.isSpinjitzu) {
+                energyBarWrapper.classList.add('spinjitzu-ready');
+                btnSpinjitzuMobile.disabled = false;
+                btnSpinjitzuMobile.className = 'ninja-btn flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/40 animate-bounce';
+            } else {
+                energyBarWrapper.classList.remove('spinjitzu-ready');
+                btnSpinjitzuMobile.disabled = true;
+                btnSpinjitzuMobile.className = 'ninja-btn flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-xs font-black text-slate-500 flex items-center justify-center gap-1.5';
+            }
+        }
+
+        // 生成粒子特效
+        function spawnParticles(x, y, color, count = 10, speedScale = 1) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (60 + Math.random() * 180) * speedScale;
+                particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 40,
+                    size: 2.5 + Math.random() * 4,
+                    color,
+                    alpha: 1,
+                    life: 0.35 + Math.random() * 0.35
+                });
+            }
+        }
+
+        // 啟動旋風術大絕招 (Spinjitzu)
+        function activateSpinjitzu() {
+            if (gameState !== 'PLAYING') return;
+            if (player.spinjitzuEnergy < 100 || player.isSpinjitzu) return;
+
+            player.isSpinjitzu = true;
+            player.spinjitzuTimer = player.spinjitzuDuration;
+            player.spinjitzuEnergy = 0;
+            screenShake = 8;
+            sfx.playSpinjitzu();
+            updateEnergyUI();
+
+            const ninja = NINJAS[currentNinjaKey];
+            spawnParticles(player.x + player.width / 2, player.y + player.height / 2, ninja.tornadoMid, 28, 1.5);
+        }
+
+        // 重置並開始遊戲
+        function startGame() {
+            sfx.init();
+            gameState = 'PLAYING';
+            score = 0;
+            lastMilestone = 0;
+            scoreFlashTimer = 0;
+            gameSpeed = baseSpeed;
+            distanceTraveled = 0;
+            timeOfDay = 0;
+
+            obstacles = [];
+            collectibles = [];
+            particles = [];
+            spawnTimer = 0.8;
+            collectibleTimer = 1.0;
+
+            player.height = player.normalHeight;
+            player.y = groundY - player.height;
+            player.vy = 0;
+            player.isGrounded = true;
+            player.isDucking = false;
+            player.spinjitzuEnergy = 35; // 開局贈送 35% 基礎能量讓玩家更快體驗旋風術
+            player.isSpinjitzu = false;
+            player.spinjitzuTimer = 0;
+
+            startOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+            updateScoreUI();
+            updateEnergyUI();
+        }
+
+        // 觸發遊戲結束
+        function triggerGameOver(reason) {
+            gameState = 'GAMEOVER';
+            screenShake = 12;
+            sfx.playGameOver();
+
+            const ninja = NINJAS[currentNinjaKey];
+            spawnParticles(player.x + player.width / 2, player.y + player.height / 2, ninja.giMain, 25, 1.3);
+
+            const finalInt = Math.floor(score);
+            if (finalInt > highScore) {
+                highScore = finalInt;
+                localStorage.setItem('ninjago_runner_hi', highScore.toString());
+            }
+
+            updateScoreUI();
+            finalScoreText.textContent = formatScore(finalInt);
+            finalHighScoreText.textContent = formatScore(highScore);
+            deathReasonText.textContent = reason;
+            gameOverOverlay.classList.remove('hidden');
+        }
+
+        // 執行跳躍動作
+        function triggerJump() {
+            if (gameState === 'IDLE') {
+                startGame();
+                return;
+            }
+            if (gameState !== 'PLAYING') return;
+
+            if (player.isGrounded) {
+                player.isGrounded = false;
+                player.isDucking = false;
+                player.height = player.normalHeight;
+                player.vy = player.jumpForce;
+                player.jumpHoldTimer = 0;
+                sfx.playJump();
+                spawnParticles(player.x + player.width / 2, groundY, '#cbd5e1', 6, 0.6);
+            }
+        }
+
+        // 設置下蹲/滑行狀態
+        function setDucking(isDuck) {
+            if (gameState !== 'PLAYING') return;
+            if (isDuck) {
+                if (!player.isGrounded) {
+                    // 空中快速下墜 (Fast Fall)
+                    player.vy = Math.max(player.vy, 750);
+                } else if (!player.isDucking) {
+                    player.isDucking = true;
+                    player.height = player.duckHeight;
+                    player.y = groundY - player.height;
+                }
+            } else {
+                if (player.isDucking) {
+                    player.isDucking = false;
+                    player.height = player.normalHeight;
+                    if (player.isGrounded) {
+                        player.y = groundY - player.height;
+                    }
+                }
+            }
+        }
+
+        // 生成障礙物
+        function spawnObstacle() {
+            const types = ['dummy', 'bamboo', 'snake'];
+            // 當分數超過 150 分後，加入需要下蹲閃避的「空中飛鏢 / 暗影烏鴉」
+            if (score > 120) {
+                types.push('shuriken', 'crow');
+            }
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            if (type === 'dummy') {
+                // 道場木人樁 (地面單體或雙體)
+                const isDouble = score > 250 && Math.random() > 0.55;
+                obstacles.push({
+                    type: 'dummy',
+                    label: '道場木人樁',
+                    x: width + 30,
+                    y: groundY - 52,
+                    w: isDouble ? 58 : 30,
+                    h: 52,
+                    isDouble
+                });
+            } else if (type === 'bamboo') {
+                // 尖銳竹刺陣 (矮而寬)
+                obstacles.push({
+                    type: 'bamboo',
+                    label: '竹刺陷阱',
+                    x: width + 30,
+                    y: groundY - 32,
+                    w: 54,
+                    h: 32
+                });
+            } else if (type === 'snake') {
+                // 蛇怪戰士 (Serpentine)
+                obstacles.push({
+                    type: 'snake',
+                    label: '蛇怪伏兵',
+                    x: width + 30,
+                    y: groundY - 46,
+                    w: 34,
+                    h: 46,
+                    animPhase: 0
+                });
+            } else if (type === 'shuriken') {
+                // 飛行暗影飛鏢 (中低空，適合下蹲滑行閃避)
+                const highFly = Math.random() > 0.65;
+                obstacles.push({
+                    type: 'shuriken',
+                    label: '暗影手裡劍',
+                    x: width + 30,
+                    y: highFly ? groundY - 82 : groundY - 46,
+                    w: 32,
+                    h: 24,
+                    rot: 0
+                });
+            } else if (type === 'crow') {
+                // 骷髏軍暗影烏鴉 (振翅飛行)
+                obstacles.push({
+                    type: 'crow',
+                    label: '暗影烏鴉',
+                    x: width + 30,
+                    y: groundY - 52,
+                    w: 42,
+                    h: 28,
+                    wingPhase: 0
+                });
+            }
+        }
+
+        // 生成黃金手裡劍 / 龍之卷軸 (收集品)
+        function spawnCollectible() {
+            const isHigh = Math.random() > 0.45;
+            const isScroll = Math.random() > 0.78; // 卷軸提供雙倍能量
+            collectibles.push({
+                type: isScroll ? 'scroll' : 'gold_shuriken',
+                x: width + 30,
+                y: isHigh ? groundY - 105 : groundY - 42,
+                size: 26,
+                rot: 0,
+                bobPhase: Math.random() * Math.PI * 2
+            });
+        }
+
+        // AABB 矩形碰撞檢測 (內縮寬容邊界讓手感更公平)
+        function checkCollision(a, b, pad = 6) {
+            return (
+                a.x + pad < b.x + b.w - pad &&
+                a.x + a.width - pad > b.x + pad &&
+                a.y + pad < b.y + b.h - pad &&
+                a.y + a.height - pad > b.y + pad
+            );
+        }
+
+        // 4. 遊戲邏輯更新迴圈 (Update)
+        function update(dt) {
+            if (screenShake > 0) {
+                screenShake = Math.max(0, screenShake - dt * 35);
+            }
+
+            // 更新粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 320 * dt;
+                p.life -= dt;
+                p.alpha = Math.max(0, p.life * 2);
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            if (gameState !== 'PLAYING') {
+                // 待機時維持呼吸與燈籠飄動
+                bgLanterns.forEach(l => {
+                    l.phase += dt * 2;
+                    l.x -= 15 * dt;
+                    if (l.x < -30) l.x = width + 30;
+                });
+                player.runCycle += dt * 4;
+                return;
+            }
+
+            // 速度隨分數平滑遞增
+            const speedBonus = Math.min(480, score * 0.28);
+            const spinjitzuBoost = player.isSpinjitzu ? 1.28 : 1.0;
+            gameSpeed = (baseSpeed + speedBonus) * spinjitzuBoost;
+            distanceTraveled += gameSpeed * dt;
+
+            // 分數累加
+            score += dt * (14 + score * 0.008) * (player.isSpinjitzu ? 1.5 : 1);
+            updateScoreUI();
+
+            // 檢查 100 分里程碑與日夜情境切換
+            const currentMilestone = Math.floor(score / 100);
+            if (currentMilestone > lastMilestone) {
+                lastMilestone = currentMilestone;
+                scoreFlashTimer = 1.0;
+                sfx.playMilestone();
+                // 每 400 分切換日夜天色
+                timeOfDay = Math.floor(score / 400) % 3;
+            }
+            if (scoreFlashTimer > 0) scoreFlashTimer -= dt;
+
+            // 視差背景捲動
+            bgMountains.forEach(m => {
+                m.x -= gameSpeed * 0.12 * dt;
+                if (m.x + m.w < 0) m.x = width + Math.random() * 60;
+            });
+            bgPagodas.forEach(p => {
+                p.x -= gameSpeed * 0.28 * dt;
+                if (p.x < -140) p.x = width + 100 + Math.random() * 120;
+            });
+            bgLanterns.forEach(l => {
+                l.x -= (gameSpeed * 0.4 + l.speed) * dt;
+                l.phase += dt * 3;
+                if (l.x < -30) {
+                    l.x = width + 30;
+                    l.y = 40 + Math.random() * (groundY - 130);
+                }
+            });
+
+            // 玩家跳躍可變高度物理 (長按跳更高)
+            if (!player.isGrounded) {
+                if (keys.jump && player.jumpHoldTimer < player.maxJumpHold && player.vy < 0) {
+                    player.vy -= 1150 * dt;
+                    player.jumpHoldTimer += dt;
+                }
+                player.vy += player.gravity * dt;
+                player.y += player.vy * dt;
+
+                if (player.y >= groundY - player.height) {
+                    player.y = groundY - player.height;
+                    player.vy = 0;
+                    player.isGrounded = true;
+                    if (keys.duck) setDucking(true);
+                }
+            } else {
+                player.runCycle += (gameSpeed / 32) * dt;
+            }
+
+            // 旋風術狀態倒數與粒子尾跡
+            if (player.isSpinjitzu) {
+                player.spinjitzuTimer -= dt;
+                player.spinAngle += dt * 28;
+                const ninja = NINJAS[currentNinjaKey];
+                if (Math.random() > 0.3) {
+                    spawnParticles(
+                        player.x + player.width / 2 + (Math.random() - 0.5) * 30,
+                        player.y + Math.random() * player.height,
+                        Math.random() > 0.5 ? ninja.tornadoMid : ninja.tornadoInner,
+                        1,
+                        0.4
+                    );
+                }
+                if (player.spinjitzuTimer <= 0) {
+                    player.isSpinjitzu = false;
+                }
+                updateEnergyUI();
+            }
+
+            // 生成障礙物
+            spawnTimer -= dt;
+            if (spawnTimer <= 0) {
+                spawnObstacle();
+                const minGap = Math.max(0.68, 1.45 - score * 0.00045);
+                spawnTimer = minGap + Math.random() * 0.65;
+            }
+
+            // 更新障礙物並檢測碰撞
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                const extraSpeed = (obs.type === 'shuriken' || obs.type === 'crow') ? 95 : 0;
+                obs.x -= (gameSpeed + extraSpeed) * dt;
+                if (obs.type === 'shuriken') obs.rot += dt * 16;
+                if (obs.type === 'crow') obs.wingPhase += dt * 14;
+                if (obs.type === 'snake') obs.animPhase += dt * 10;
+
+                if (checkCollision(player, obs, 6)) {
+                    if (player.isSpinjitzu) {
+                        // 旋風術無敵狀態：直接撞碎障礙物並加分！
+                        sfx.playSmash();
+                        screenShake = 6;
+                        score += 25;
+                        spawnParticles(obs.x + obs.w / 2, obs.y + obs.h / 2, '#fbbf24', 18, 1.3);
+                        obstacles.splice(i, 1);
+                        continue;
+                    } else {
+                        triggerGameOver(`被「${obs.label}」擊中了！`);
+                        return;
+                    }
+                }
+
+                if (obs.x + obs.w < -60) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // 生成並更新黃金手裡劍 / 卷軸
+            collectibleTimer -= dt;
+            if (collectibleTimer <= 0) {
+                spawnCollectible();
+                collectibleTimer = 1.6 + Math.random() * 1.4;
+            }
+
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const col = collectibles[i];
+                col.x -= gameSpeed * 0.92 * dt;
+                col.rot += dt * 6;
+                col.bobPhase += dt * 5;
+                const drawY = col.y + Math.sin(col.bobPhase) * 6;
+
+                const box = { x: col.x - 12, y: drawY - 12, w: 24, h: 24 };
+                if (checkCollision(player, box, 2)) {
+                    sfx.playCollect();
+                    const gainEnergy = col.type === 'scroll' ? 35 : 20;
+                    score += col.type === 'scroll' ? 30 : 15;
+                    if (!player.isSpinjitzu) {
+                        player.spinjitzuEnergy = Math.min(100, player.spinjitzuEnergy + gainEnergy);
+                        updateEnergyUI();
+                    }
+                    spawnParticles(col.x, drawY, '#facc15', 12, 0.9);
+                    collectibles.splice(i, 1);
+                    continue;
+                }
+
+                if (col.x < -40) collectibles.splice(i, 1);
+            }
+        }
+
+        // 5. 繪製視差背景與忍者道場細節 (Render)
+        function drawBackground() {
+            // 天空漸層隨日夜模式變化
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+            if (timeOfDay === 0) {
+                // 黃昏暮色道場
+                skyGrad.addColorStop(0, '#1e1b4b');
+                skyGrad.addColorStop(0.55, '#7c2d12');
+                skyGrad.addColorStop(1, '#d97706');
+            } else if (timeOfDay === 1) {
+                // 星夜月影
+                skyGrad.addColorStop(0, '#020617');
+                skyGrad.addColorStop(0.6, '#0f172a');
+                skyGrad.addColorStop(1, '#1e293b');
+            } else {
+                // 黃金黎明
+                skyGrad.addColorStop(0, '#0c4a6e');
+                skyGrad.addColorStop(0.55, '#0284c7');
+                skyGrad.addColorStop(1, '#fde68a');
+            }
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // 太陽 / 明月
+            ctx.save();
+            const celestialX = width * 0.78;
+            const celestialY = height * 0.24;
+            if (timeOfDay === 1) {
+                // 滿月光暈
+                ctx.fillStyle = 'rgba(254, 249, 195, 0.15)';
+                ctx.beginPath();
+                ctx.arc(celestialX, celestialY, 44, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fef9c3';
+                ctx.beginPath();
+                ctx.arc(celestialX, celestialY, 26, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // 烈日紅輪
+                ctx.fillStyle = timeOfDay === 0 ? 'rgba(251, 191, 36, 0.25)' : 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(celestialX, celestialY, 48, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = timeOfDay === 0 ? '#fbbf24' : '#fef08a';
+                ctx.beginPath();
+                ctx.arc(celestialX, celestialY, 30, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 遠景層：水墨山巒
+            ctx.fillStyle = timeOfDay === 1 ? '#0f172a' : (timeOfDay === 0 ? '#451a03' : '#0369a1');
+            bgMountains.forEach(m => {
+                ctx.beginPath();
+                ctx.moveTo(m.x, groundY);
+                ctx.lineTo(m.x + m.w * 0.5, groundY - m.h);
+                ctx.lineTo(m.x + m.w, groundY);
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            // 中景層：傳統五重塔 / 忍者道場剪影
+            bgPagodas.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, groundY);
+                ctx.scale(p.scale, p.scale);
+                ctx.fillStyle = timeOfDay === 1 ? '#1e293b' : (timeOfDay === 0 ? '#290d02' : '#075985');
+
+                const baseW = 68;
+                const floorH = 26;
+                for (let f = 0; f < p.floors; f++) {
+                    const fw = baseW - f * 10;
+                    const fy = -(f + 1) * floorH;
+                    // 塔身
+                    ctx.fillRect(-fw / 2, fy, fw, floorH);
+                    // 飛簷屋頂
+                    ctx.beginPath();
+                    ctx.moveTo(-fw / 2 - 14, fy + 4);
+                    ctx.quadraticCurveTo(0, fy - 6, fw / 2 + 14, fy + 4);
+                    ctx.lineTo(fw / 2 + 6, fy + 9);
+                    ctx.lineTo(-fw / 2 - 6, fy + 9);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                // 塔頂相輪尖塔
+                const topY = -p.floors * floorH;
+                ctx.fillRect(-2, topY - 22, 4, 22);
+                ctx.restore();
+            });
+
+            // 漂浮祈福燈籠
+            bgLanterns.forEach(l => {
+                const bob = Math.sin(l.phase) * 4;
+                ctx.fillStyle = 'rgba(251, 146, 60, 0.25)';
+                ctx.beginPath();
+                ctx.arc(l.x, l.y + bob, 11, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#f97316';
+                ctx.fillRect(l.x - 4, l.y + bob - 5, 8, 10);
+                ctx.fillStyle = '#fef08a';
+                ctx.fillRect(l.x - 2, l.y + bob - 3, 4, 6);
+            });
+
+            // 道場木地板跑道
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, groundY, width, height - groundY);
+
+            // 地板頂部金邊木樑
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(0, groundY, width, 5);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(0, groundY, width, 2);
+
+            // 地板捲動木紋與石磚線條
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            const tileW = 48;
+            const offset = distanceTraveled % tileW;
+            for (let x = -offset; x < width; x += tileW) {
+                ctx.beginPath();
+                ctx.moveTo(x, groundY + 6);
+                ctx.lineTo(x - 14, height);
+                ctx.stroke();
+            }
+        }
+
+        // 繪製玩家忍者 (含跑步、跳躍翻滾、滑行、以及旋風術龍捲風特效)
+        function drawPlayer() {
+            const ninja = NINJAS[currentNinjaKey];
+            ctx.save();
+
+            // 若正在施展旋風術 (Spinjitzu Tornado)
+            if (player.isSpinjitzu) {
+                const cx = player.x + player.width / 2;
+                const cy = player.y + player.height / 2;
+
+                // 旋轉龍捲風光錐
+                for (let layer = 0; layer < 5; layer++) {
+                    const progress = layer / 5;
+                    const layerY = player.y + player.height - progress * (player.height + 16);
+                    const radiusX = 14 + progress * 24 + Math.sin(player.spinAngle + layer) * 4;
+                    const radiusY = 7;
+
+                    ctx.strokeStyle = layer % 2 === 0 ? ninja.tornadoMid : ninja.tornadoInner;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, layerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // 能量核心閃光
+                const grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, 38);
+                grad.addColorStop(0, ninja.tornadoInner);
+                grad.addColorStop(0.5, ninja.tornadoMid);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 38, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+                return;
+            }
+
+            const px = player.x;
+            const py = player.y;
+            const pw = player.width;
+            const ph = player.height;
+
+            // 忍者背後隨風飄揚的頭帶絲帶
+            const ribbonWave = Math.sin(player.runCycle * 1.4) * 5;
+            ctx.strokeStyle = ninja.giMain;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(px + 8, py + 12);
+            ctx.quadraticCurveTo(px - 10, py + 10 + ribbonWave, px - 20, py + 15 - ribbonWave);
+            ctx.stroke();
+
+            if (player.isDucking) {
+                // 滑行下蹲姿勢 (低重心忍者衝刺)
+                // 身體軀幹
+                ctx.fillStyle = ninja.giMain;
+                ctx.beginPath();
+                ctx.roundRect(px + 2, py + 6, pw + 6, ph - 10, 8);
+                ctx.fill();
+
+                // 腰帶與武士刀柄
+                ctx.fillStyle = ninja.giAccent;
+                ctx.fillRect(px + 14, py + 6, 6, ph - 10);
+
+                // 忍者頭罩
+                ctx.fillStyle = ninja.giMain;
+                ctx.beginPath();
+                ctx.roundRect(px + 22, py, 24, 22, 7);
+                ctx.fill();
+
+                // 護目眼縫與發光雙眼
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(px + 30, py + 6, 14, 7);
+                ctx.fillStyle = ninja.eyeGlow;
+                ctx.fillRect(px + 33, py + 8, 4, 3);
+                ctx.fillRect(px + 39, py + 8, 4, 3);
+            } else {
+                // 站立 / 跑步 / 跳躍姿勢
+                const legSwing = player.isGrounded ? Math.sin(player.runCycle) * 8 : 6;
+
+                // 後腳
+                ctx.fillStyle = ninja.giDark;
+                ctx.fillRect(px + 12 - legSwing, py + ph - 14, 8, 14);
+                // 前腳
+                ctx.fillStyle = ninja.giMain;
+                ctx.fillRect(px + 22 + legSwing, py + ph - 14, 8, 14);
+
+                // 忍者服上衣 (道服)
+                ctx.fillStyle = ninja.giMain;
+                ctx.beginPath();
+                ctx.roundRect(px + 8, py + 20, 26, 22, 5);
+                ctx.fill();
+
+                // 道服V領與金色腰帶
+                ctx.strokeStyle = ninja.giAccent;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(px + 15, py + 21);
+                ctx.lineTo(px + 21, py + 31);
+                ctx.lineTo(px + 27, py + 21);
+                ctx.stroke();
+
+                ctx.fillStyle = ninja.giAccent;
+                ctx.fillRect(px + 8, py + 36, 26, 4);
+
+                // 背後武士刀柄
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(px + 10, py + 22);
+                ctx.lineTo(px + 2, py + 10);
+                ctx.stroke();
+
+                // 忍者頭部與面罩
+                ctx.fillStyle = ninja.giMain;
+                ctx.beginPath();
+                ctx.roundRect(px + 7, py, 28, 22, 8);
+                ctx.fill();
+
+                // 護額金屬標誌
+                ctx.fillStyle = ninja.giAccent;
+                ctx.fillRect(px + 10, py + 3, 22, 3);
+
+                // 露出的雙眼區域
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.roundRect(px + 14, py + 8, 19, 7, 3);
+                ctx.fill();
+
+                // 銳利發光的忍者眼神
+                ctx.fillStyle = ninja.eyeGlow;
+                ctx.fillRect(px + 17, py + 10, 5, 3);
+                ctx.fillRect(px + 25, py + 10, 5, 3);
+            }
+
+            ctx.restore();
+        }
+
+        // 繪製各類道場障礙物
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.save();
+                if (obs.type === 'dummy') {
+                    // 木人樁 (單個或雙個)
+                    const count = obs.isDouble ? 2 : 1;
+                    for (let c = 0; c < count; c++) {
+                        const dx = obs.x + c * 28;
+                        // 底座
+                        ctx.fillStyle = '#78350f';
+                        ctx.fillRect(dx + 4, obs.y + obs.h - 8, 22, 8);
+                        // 木樁主幹
+                        ctx.fillStyle = '#b45309';
+                        ctx.fillRect(dx + 9, obs.y + 4, 12, obs.h - 12);
+                        // 橫向木臂
+                        ctx.fillStyle = '#d97706';
+                        ctx.fillRect(dx + 2, obs.y + 18, 26, 6);
+                        ctx.fillRect(dx + 5, obs.y + 30, 20, 5);
+                        // 紅色綁帶
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(dx + 9, obs.y + 10, 12, 4);
+                    }
+                } else if (obs.type === 'bamboo') {
+                    // 尖銳竹刺陣
+                    const spikes = 4;
+                    const sw = obs.w / spikes;
+                    for (let s = 0; s < spikes; s++) {
+                        const sx = obs.x + s * sw;
+                        ctx.fillStyle = s % 2 === 0 ? '#15803d' : '#16a34a';
+                        ctx.beginPath();
+                        ctx.moveTo(sx, obs.y + obs.h);
+                        ctx.lineTo(sx + sw / 2, obs.y);
+                        ctx.lineTo(sx + sw, obs.y + obs.h);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // 竹節線
+                        ctx.strokeStyle = '#bbf7d0';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(sx + 3, obs.y + obs.h * 0.6);
+                        ctx.lineTo(sx + sw - 3, obs.y + obs.h * 0.6);
+                        ctx.stroke();
+                    }
+                } else if (obs.type === 'snake') {
+                    // 蛇怪戰士 (Serpentine)
+                    const bob = Math.sin(obs.animPhase) * 2;
+                    ctx.fillStyle = '#4d7c0f';
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x + 4, obs.y + 10 + bob, 26, obs.h - 10 - bob, 8);
+                    ctx.fill();
+                    // 蛇頭與毒牙
+                    ctx.fillStyle = '#65a30d';
+                    ctx.beginPath();
+                    ctx.roundRect(obs.x, obs.y + bob, 28, 16, 6);
+                    ctx.fill();
+                    // 紅眼
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(obs.x + 4, obs.y + 5 + bob, 5, 4);
+                    // 白色毒牙
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x + 4, obs.y + 14 + bob);
+                    ctx.lineTo(obs.x + 7, obs.y + 20 + bob);
+                    ctx.lineTo(obs.x + 10, obs.y + 14 + bob);
+                    ctx.fill();
+                } else if (obs.type === 'shuriken') {
+                    // 高速旋轉暗影手裡劍
+                    const cx = obs.x + obs.w / 2;
+                    const cy = obs.y + obs.h / 2;
+                    ctx.translate(cx, cy);
+                    ctx.rotate(obs.rot);
+                    ctx.fillStyle = '#94a3b8';
+                    for (let b = 0; b < 4; b++) {
+                        ctx.rotate(Math.PI / 2);
+                        ctx.beginPath();
+                        ctx.moveTo(0, -15);
+                        ctx.lineTo(5, -4);
+                        ctx.lineTo(0, 0);
+                        ctx.lineTo(-5, -4);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (obs.type === 'crow') {
+                    // 暗影烏鴉
+                    const wingY = Math.sin(obs.wingPhase) * 10;
+                    ctx.fillStyle = '#1e1b4b';
+                    // 身體
+                    ctx.beginPath();
+                    ctx.ellipse(obs.x + 20, obs.y + 16, 16, 8, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 尖喙
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x + 5, obs.y + 14);
+                    ctx.lineTo(obs.x - 4, obs.y + 17);
+                    ctx.lineTo(obs.x + 5, obs.y + 20);
+                    ctx.fill();
+                    // 紅眼
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(obs.x + 9, obs.y + 13, 3, 3);
+                    // 翅膀
+                    ctx.strokeStyle = '#4338ca';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x + 20, obs.y + 14);
+                    ctx.lineTo(obs.x + 28, obs.y + 4 + wingY);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            });
+        }
+
+        // 繪製黃金手裡劍與龍之卷軸收集品
+        function drawCollectibles() {
+            collectibles.forEach(col => {
+                const drawY = col.y + Math.sin(col.bobPhase) * 6;
+                ctx.save();
+                ctx.translate(col.x, drawY);
+
+                // 金色光暈
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.25)';
+                ctx.beginPath();
+                ctx.arc(0, 0, 17, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (col.type === 'gold_shuriken') {
+                    ctx.rotate(col.rot);
+                    ctx.fillStyle = '#facc15';
+                    for (let i = 0; i < 4; i++) {
+                        ctx.rotate(Math.PI / 2);
+                        ctx.beginPath();
+                        ctx.moveTo(0, -13);
+                        ctx.lineTo(4, -3);
+                        ctx.lineTo(0, 0);
+                        ctx.lineTo(-4, -3);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // 龍之秘笈卷軸
+                    ctx.fillStyle = '#fef3c7';
+                    ctx.fillRect(-10, -7, 20, 14);
+                    ctx.fillStyle = '#dc2626';
+                    ctx.fillRect(-12, -9, 4, 18);
+                    ctx.fillRect(8, -9, 4, 18);
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(-2, -7, 4, 14);
+                }
+                ctx.restore();
+            });
+        }
+
+        // 繪製粒子特效與旋風術倒數提示
+        function drawParticlesAndEffects() {
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 若旋風術啟動中，在畫面下方顯示剩餘時間光條
+            if (player.isSpinjitzu) {
+                const ratio = Math.max(0, player.spinjitzuTimer / player.spinjitzuDuration);
+                const barW = 180;
+                const bx = (width - barW) / 2;
+                const by = groundY + 16;
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+                ctx.fillRect(bx - 2, by - 2, barW + 4, 12);
+                ctx.fillStyle = NINJAS[currentNinjaKey].tornadoMid;
+                ctx.fillRect(bx, by, barW * ratio, 8);
+            }
+        }
+
+        // 主渲染函式
+        function render() {
+            ctx.save();
+            if (screenShake > 0) {
+                const dx = (Math.random() - 0.5) * screenShake;
+                const dy = (Math.random() - 0.5) * screenShake;
+                ctx.translate(dx, dy);
+            }
+
+            drawBackground();
+            drawCollectibles();
+            drawObstacles();
+            drawPlayer();
+            drawParticlesAndEffects();
+
+            ctx.restore();
+        }
+
+        // 主動畫迴圈
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // 限制最大 dt 避免切換分頁穿牆
+            lastTime = timestamp;
+
+            update(dt);
+            render();
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // ============================================================================
+        // 事件監聽：鍵盤、滑鼠、觸控與角色切換
+        // ============================================================================
+
+        // 角色切換按鈕邏輯
+        const ninjaPills = document.querySelectorAll('.ninja-pill');
+        ninjaPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                const selected = pill.getAttribute('data-ninja');
+                if (!NINJAS[selected]) return;
+                currentNinjaKey = selected;
+
+                // 重置所有按鈕樣式
+                ninjaPills.forEach(btn => {
+                    btn.className = 'ninja-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all text-slate-300 hover:bg-slate-800';
+                });
+                // 套用選中忍者專屬高亮樣式
+                pill.className = `ninja-pill active px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${NINJAS[selected].pillActiveClass}`;
+
+                // 切換時產生小火花粒子回饋
+                spawnParticles(player.x + player.width / 2, player.y + player.height / 2, NINJAS[selected].giMain, 12, 0.8);
+                render();
+            });
+        });
+
+        // 鍵盤操作
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                e.preventDefault();
+                if (gameState === 'GAMEOVER') {
+                    startGame();
+                    return;
+                }
+                if (!keys.jump) {
+                    keys.jump = true;
+                    triggerJump();
+                }
+            } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                e.preventDefault();
+                keys.duck = true;
+                setDucking(true);
+            } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyE') {
+                e.preventDefault();
+                activateSpinjitzu();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                keys.jump = false;
+            } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                keys.duck = false;
+                setDucking(false);
+            }
+        });
+
+        // 畫布點擊 / 觸控操作 (點擊上半部跳躍、下半部下蹲)
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState === 'IDLE') {
+                startGame();
+                return;
+            }
+            if (gameState !== 'PLAYING') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            if (clickY > rect.height * 0.65) {
+                keys.duck = true;
+                setDucking(true);
+            } else {
+                keys.jump = true;
+                triggerJump();
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            keys.jump = false;
+            if (keys.duck) {
+                keys.duck = false;
+                setDucking(false);
+            }
+        });
+
+        // 底部手機專用實體觸控按鈕
+        btnJumpMobile.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            keys.jump = true;
+            triggerJump();
+        });
+        btnJumpMobile.addEventListener('pointerup', () => { keys.jump = false; });
+
+        btnDuckMobile.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            keys.duck = true;
+            setDucking(true);
+        });
+        btnDuckMobile.addEventListener('pointerup', () => {
+            keys.duck = false;
+            setDucking(false);
+        });
+
+        btnSpinjitzuMobile.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activateSpinjitzu();
+        });
+
+        // 開始、重玩與靜音按鈕
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+
+        muteBtn.addEventListener('click', () => {
+            const isMuted = sfx.toggleMute();
+            soundOnIcon.classList.toggle('hidden', isMuted);
+            soundOffIcon.classList.toggle('hidden', !isMuted);
+        });
+
+        // 視窗縮放自適應
+        window.addEventListener('resize', resizeCanvas);
+
+        // 啟動初始化
+        window.onload = function () {
+            resizeCanvas();
+            updateScoreUI();
+            updateEnergyUI();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
